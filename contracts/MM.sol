@@ -19,16 +19,16 @@ import "./IUniswapV2Pair.sol";
 import "./IUniswapV2Router01.sol";
 import "./IUniswapV2Router02.sol";
 
-contract PERRO_DINERO is ERC20, ERC20Burnable, Ownable2Step, Initializable {
+contract MM is ERC20, ERC20Burnable, Ownable2Step, Initializable {
     
     mapping (address => bool) public blacklisted;
 
     uint16 public swapThresholdRatio;
     
-    uint256 private _jotchuaPending;
+    uint256 private _MMPending;
 
-    address public jotchuaAddress;
-    uint16[3] public jotchuaFees;
+    address public MMAddress;
+    uint16[3] public MMFees;
 
     mapping (address => bool) public isExcludedFromFees;
 
@@ -53,9 +53,9 @@ contract PERRO_DINERO is ERC20, ERC20Burnable, Ownable2Step, Initializable {
 
     event SwapThresholdUpdated(uint16 swapThresholdRatio);
 
-    event jotchuaAddressUpdated(address jotchuaAddress);
-    event jotchuaFeesUpdated(uint16 buyFee, uint16 sellFee, uint16 transferFee);
-    event jotchuaFeeSent(address recipient, uint256 amount);
+    event MMAddressUpdated(address MMAddress);
+    event MMFeesUpdated(uint16 buyFee, uint16 sellFee, uint16 transferFee);
+    event MMFeeSent(address recipient, uint256 amount);
 
     event ExcludeFromFees(address indexed account, bool isExcluded);
 
@@ -73,14 +73,14 @@ contract PERRO_DINERO is ERC20, ERC20Burnable, Ownable2Step, Initializable {
     event ExcludeFromTradingRestriction(address indexed account, bool isExcluded);
  
     constructor()
-        ERC20(unicode"PERRO DINERO", unicode"JOTCHUA") 
+        ERC20(unicode"Mother Mayhem", unicode"MM") 
     {
         address supplyRecipient = 0x2BbeEd14C707d30B309136Ef83080D1BC7b3a04e;
         
         updateSwapThreshold(50);
 
-        jotchuaAddressSetup(0x7C0888d52bb8Fa01f6B0ec72C578510f9f4ef5A1);
-        jotchuaFeesSetup(500, 500, 0);
+        MMAddressSetup(0x7C0888d52bb8Fa01f6B0ec72C578510f9f4ef5A1);
+        MMFeesSetup(500, 500, 0);
 
         excludeFromFees(supplyRecipient, true);
         excludeFromFees(address(this), true); 
@@ -142,28 +142,28 @@ contract PERRO_DINERO is ERC20, ERC20Burnable, Ownable2Step, Initializable {
     }
 
     function getAllPending() public view returns (uint256) {
-        return 0 + _jotchuaPending;
+        return 0 + _MMPending;
     }
 
-    function jotchuaAddressSetup(address _newAddress) public onlyOwner {
+    function MMAddressSetup(address _newAddress) public onlyOwner {
         require(_newAddress != address(0), "TaxesDefaultRouterWallet: Wallet tax recipient cannot be a 0x0 address");
 
-        jotchuaAddress = _newAddress;
+        MMAddress = _newAddress;
         excludeFromFees(_newAddress, true);
         _excludeFromLimits(_newAddress, true);
 
-        emit jotchuaAddressUpdated(_newAddress);
+        emit MMAddressUpdated(_newAddress);
     }
 
-    function jotchuaFeesSetup(uint16 _buyFee, uint16 _sellFee, uint16 _transferFee) public onlyOwner {
-        totalFees[0] = totalFees[0] - jotchuaFees[0] + _buyFee;
-        totalFees[1] = totalFees[1] - jotchuaFees[1] + _sellFee;
-        totalFees[2] = totalFees[2] - jotchuaFees[2] + _transferFee;
+    function MMFeesSetup(uint16 _buyFee, uint16 _sellFee, uint16 _transferFee) public onlyOwner {
+        totalFees[0] = totalFees[0] - MMFees[0] + _buyFee;
+        totalFees[1] = totalFees[1] - MMFees[1] + _sellFee;
+        totalFees[2] = totalFees[2] - MMFees[2] + _transferFee;
         require(totalFees[0] <= 2500 && totalFees[1] <= 2500 && totalFees[2] <= 2500, "TaxesDefaultRouter: Cannot exceed max total fee of 25%");
 
-        jotchuaFees = [_buyFee, _sellFee, _transferFee];
+        MMFees = [_buyFee, _sellFee, _transferFee];
 
-        emit jotchuaFeesUpdated(_buyFee, _sellFee, _transferFee);
+        emit MMFeesUpdated(_buyFee, _sellFee, _transferFee);
     }
 
     function excludeFromFees(address account, bool isExcluded) public onlyOwner {
@@ -194,7 +194,7 @@ contract PERRO_DINERO is ERC20, ERC20Burnable, Ownable2Step, Initializable {
                 fees = amount * totalFees[txType] / 10000;
                 amount -= fees;
                 
-                _jotchuaPending += fees * jotchuaFees[txType] / totalFees[txType];
+                _MMPending += fees * MMFees[txType] / totalFees[txType];
 
                 
             }
@@ -209,21 +209,21 @@ contract PERRO_DINERO is ERC20, ERC20Burnable, Ownable2Step, Initializable {
         if (!_swapping && !AMMPairs[from] && from != address(routerV2) && canSwap) {
             _swapping = true;
             
-            if (false || _jotchuaPending > 0) {
-                uint256 token2Swap = 0 + _jotchuaPending;
+            if (false || _MMPending > 0) {
+                uint256 token2Swap = 0 + _MMPending;
                 bool success = false;
 
                 _swapTokensForCoin(token2Swap);
                 uint256 coinsReceived = address(this).balance;
                 
-                uint256 jotchuaPortion = coinsReceived * _jotchuaPending / token2Swap;
-                if (jotchuaPortion > 0) {
-                    success = payable(jotchuaAddress).send(jotchuaPortion);
+                uint256 MMPortion = coinsReceived * _MMPending / token2Swap;
+                if (MMPortion > 0) {
+                    success = payable(MMAddress).send(MMPortion);
                     if (success) {
-                        emit jotchuaFeeSent(jotchuaAddress, jotchuaPortion);
+                        emit MMFeeSent(MMAddress, MMPortion);
                     }
                 }
-                _jotchuaPending = 0;
+                _MMPending = 0;
 
             }
 
