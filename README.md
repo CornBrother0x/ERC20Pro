@@ -1,2 +1,2 @@
 # ERC20Plus
- ERC20 with features
+ ERC20 with features!
